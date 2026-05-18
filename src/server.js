@@ -32,7 +32,7 @@ app.get("/",(req,res)=>{
     );
 })
 
-app.use("api/v1/health",healthRoutes);
+app.use("/api/v1/health",healthRoutes);
 
 
 app.use(global404Handler);
