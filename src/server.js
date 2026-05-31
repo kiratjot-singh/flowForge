@@ -8,7 +8,8 @@ import errorMiddleware from "./middlewares/error.middleware.js";
 import global404Handler from "./middlewares/global404Handler.js";
 import cors from "cors";
 import corsOptions from "./config/cors.config.js";
-import env from "./config/env.js"
+import env from "./config/env.js";
+import pool from "./config/database.js";
 
 
 
@@ -38,7 +39,25 @@ app.use("/api/v1/health",healthRoutes);
 app.use(global404Handler);
 app.use(errorMiddleware);
 
-app.listen(PORT,()=>{
+
+
+//graceful shutdown done
+const server=app.listen(PORT,()=>{
     console.log(`server is running on port ${PORT}`);
     
 })
+const shutdown = async () => {
+  console.log("Shutting down server...");
+
+  server.close(async () => {
+    console.log("HTTP server closed");
+
+    await pool.end();
+
+    console.log("Database pool closed");
+
+    process.exit(0);
+  });
+};
+process.on("SIGINT", shutdown);
+process.on("SIGTERM", shutdown);
