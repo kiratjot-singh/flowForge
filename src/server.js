@@ -10,6 +10,8 @@ import cors from "cors";
 import corsOptions from "./config/cors.config.js";
 import env from "./config/env.js";
 import pool from "./config/database.js";
+import githubWebhookRoutes from "./routes/v1/githubWebhook.route.js";
+
 
 
 
@@ -22,8 +24,6 @@ app.use(express.json());
 
 app.use(loggerMiddleware);
 
-
-
 app.get("/",(req,res)=>{
     res.json(
         {
@@ -33,6 +33,7 @@ app.get("/",(req,res)=>{
     );
 })
 
+app.use("/api/v1/webhooks/github",githubWebhookRoutes);
 app.use("/api/v1/health",healthRoutes);
 
 
