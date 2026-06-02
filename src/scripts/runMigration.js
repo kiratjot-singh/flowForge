@@ -1,23 +1,14 @@
 import pool from "../config/database.js";
 
-await pool.query(`
-  CREATE TABLE IF NOT EXISTS deployments (
-    id UUID PRIMARY KEY,
+const res=await pool.query(`
+  SELECT *
+FROM deployment_logs
+ORDER BY created_at DESC;
 
-    repo_url TEXT NOT NULL,
-
-    branch TEXT NOT NULL,
-
-    commit_sha TEXT NOT NULL,
-
-    status TEXT NOT NULL,
-
-    created_at TIMESTAMP DEFAULT NOW()
-  );
 `);
 
 
 
-console.log("deployments table created");
+console.log(res);
 
 await pool.end();
