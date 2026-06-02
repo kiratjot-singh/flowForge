@@ -11,7 +11,7 @@ import corsOptions from "./config/cors.config.js";
 import env from "./config/env.js";
 import pool from "./config/database.js";
 import githubWebhookRoutes from "./routes/v1/githubWebhook.route.js";
-
+import deploymentRoutes from "./routes/v1/deployment.route.js";
 
 
 
@@ -35,6 +35,7 @@ app.get("/",(req,res)=>{
 
 app.use("/api/v1/webhooks/github",githubWebhookRoutes);
 app.use("/api/v1/health",healthRoutes);
+app.use("/api/v1/deployments",deploymentRoutes);
 
 
 app.use(global404Handler);

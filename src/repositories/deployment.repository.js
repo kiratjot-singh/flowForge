@@ -68,3 +68,26 @@ export const updateDeploymentStatus = async (
 
   return result.rows[0];
 };
+
+export const updateDeploymentOutputDirectory =
+  async (deploymentId, outputDirectory) => {
+    await pool.query(
+      `
+      UPDATE deployments
+      SET output_directory = $1
+      WHERE id = $2
+      `,
+      [outputDirectory, deploymentId]
+    );
+  };
+
+  export const findAllDeployments = async () => {
+  const result = await pool.query(`
+    SELECT *
+    FROM deployments
+    ORDER BY created_at DESC
+  `);
+
+  return result.rows;
+};
+

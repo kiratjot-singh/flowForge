@@ -27,3 +27,19 @@ export const createDeploymentLog = async (
     ]
   );
 };
+
+export const findDeploymentLogs = async (
+  deploymentId
+) => {
+  const result = await pool.query(
+    `
+    SELECT *
+    FROM deployment_logs
+    WHERE deployment_id = $1
+    ORDER BY created_at ASC
+    `,
+    [deploymentId]
+  );
+
+  return result.rows;
+};

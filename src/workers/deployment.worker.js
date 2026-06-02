@@ -11,7 +11,8 @@ const execAsync = promisify(exec);
 
 import {
   findDeploymentById,
-  updateDeploymentStatus
+  updateDeploymentStatus,
+  updateDeploymentOutputDirectory
 } from "../repositories/deployment.repository.js";
 
 import {
@@ -50,7 +51,9 @@ const worker = new Worker(
         { recursive: true }
       );
 
-      // Clone repository
+      // --------------------
+      // CLONE REPOSITORY
+      // --------------------
 
       await createDeploymentLog(
         deploymentId,
@@ -83,7 +86,9 @@ const worker = new Worker(
         "Repository cloned successfully"
       );
 
-      // Check package.json
+      // --------------------
+      // CHECK PACKAGE.JSON
+      // --------------------
 
       const packageJsonPath = path.join(
         deploymentPath,
@@ -111,7 +116,9 @@ const worker = new Worker(
         return;
       }
 
-      // npm install
+      // --------------------
+      // NPM INSTALL
+      // --------------------
 
       await createDeploymentLog(
         deploymentId,
@@ -122,10 +129,11 @@ const worker = new Worker(
         stdout: npmInstallStdout,
         stderr: npmInstallStderr
       } = await execAsync(
-        "npm install",
-        {
-          cwd: deploymentPath
-        }
+        `docker run --rm \
+        -v "${deploymentPath}:/app" \
+        -w /app \
+        flowforge-builder \
+        npm install`
       );
 
       if (npmInstallStdout) {
@@ -146,6 +154,159 @@ const worker = new Worker(
         deploymentId,
         "Dependencies installed successfully"
       );
+
+      // --------------------
+      // BUILD SCRIPT CHECK
+      // --------------------
+
+      const packageJson = JSON.parse(
+        await fs.readFile(
+          packageJsonPath,
+          "utf-8"
+        )
+      );
+
+      const hasBuildScript =
+  packageJson.scripts?.build;
+
+if (!hasBuildScript) {
+
+  await createDeploymentLog(
+    deploymentId,
+    "No build script found"
+  );
+
+  const indexHtmlPath = path.join(
+    deploymentPath,
+    "index.html"
+  );
+
+  try {
+
+    await fs.access(indexHtmlPath);
+
+    await createDeploymentLog(
+      deploymentId,
+      "Static site detected"
+    );
+
+    await updateDeploymentOutputDirectory(
+      deploymentId,
+      "."
+    );
+
+    await updateDeploymentStatus(
+      deploymentId,
+      "SUCCESS"
+    );
+
+    return;
+
+  } catch {
+
+    await createDeploymentLog(
+      deploymentId,
+      "No deployable output found"
+    );
+
+    await updateDeploymentStatus(
+      deploymentId,
+      "FAILED"
+    );
+
+    return;
+  }
+}
+
+      // --------------------
+      // RUN BUILD
+      // --------------------
+
+      await createDeploymentLog(
+        deploymentId,
+        "Starting build..."
+      );
+
+      const {
+        stdout: buildStdout,
+        stderr: buildStderr
+      } = await execAsync(
+        `docker run --rm \
+        -v "${deploymentPath}:/app" \
+        -w /app \
+        flowforge-builder \
+        npm run build`
+      );
+
+      if (buildStdout) {
+        await createDeploymentLog(
+          deploymentId,
+          buildStdout
+        );
+      }
+
+      if (buildStderr) {
+        await createDeploymentLog(
+          deploymentId,
+          buildStderr
+        );
+      }
+
+      await createDeploymentLog(
+        deploymentId,
+        "Build completed successfully"
+      );
+
+      // --------------------
+      // DETECT BUILD OUTPUT
+      // --------------------
+
+      const possibleOutputs = [
+        "dist",
+        "build",
+        ".next",
+        "out"
+      ];
+
+      let outputDirectory = null;
+
+      for (const dir of possibleOutputs) {
+        const fullPath = path.join(
+          deploymentPath,
+          dir
+        );
+
+        try {
+          await fs.access(fullPath);
+
+          outputDirectory = dir;
+
+          await updateDeploymentOutputDirectory(
+            deploymentId,
+            dir
+          );
+
+          await createDeploymentLog(
+            deploymentId,
+            `Output directory detected: ${dir}`
+          );
+
+          break;
+        } catch {
+          // ignore
+        }
+      }
+
+      if (!outputDirectory) {
+        await createDeploymentLog(
+          deploymentId,
+          "No output directory detected"
+        );
+      }
+
+      // --------------------
+      // SUCCESS
+      // --------------------
 
       await updateDeploymentStatus(
         deploymentId,
