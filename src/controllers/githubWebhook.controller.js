@@ -12,7 +12,9 @@ export const githubWebhook = async (req, res) => {
     ""
   );
 
-  const commitSha = req.body.after;
+  const commitSha =
+  req.body.after ||
+  req.body.head_commit?.id;
 
   const deployment = await createDeployment({
     id: crypto.randomUUID(),

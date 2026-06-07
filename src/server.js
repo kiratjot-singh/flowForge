@@ -1,7 +1,7 @@
 import express from "express";
 
 import "./config/loadenv.js";
-import helmet from "helmet";
+import helmet, { contentSecurityPolicy } from "helmet";
 import healthRoutes from "./routes/v1/health.route.js"
 import loggerMiddleware from "./middlewares/logger.middleware.js";
 import errorMiddleware from "./middlewares/error.middleware.js";
@@ -18,7 +18,32 @@ import deploymentRoutes from "./routes/v1/deployment.route.js";
 const app=express();
 const PORT = env.PORT ;
 
-app.use(helmet());
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+
+        scriptSrc: [
+          "'self'",
+          "https://mdn.github.io"
+        ],
+
+        styleSrc: [
+          "'self'",
+          "'unsafe-inline'",
+          "https://mdn.github.io"
+        ],
+
+        imgSrc: [
+          "'self'",
+          "data:",
+          "https://mdn.github.io"
+        ]
+      }
+    }
+  })
+);
 app.use(cors(corsOptions));
 app.use(express.json());
 
