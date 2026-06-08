@@ -1,5 +1,6 @@
+import env from "./env.js";
 const corsOptions = {
-  origin: "http://localhost:5173",
+  origin: env.VITE_API_URL,
   credentials: true
 };
 
