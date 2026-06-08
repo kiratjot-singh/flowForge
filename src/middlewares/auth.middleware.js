@@ -2,6 +2,9 @@ import jwt from "jsonwebtoken";
 import env from "../config/env.js";
 
 export const protect = async (req, res, next) => {
+  console.log("PROTECT HIT");
+  console.log("PATH:", req.originalUrl);
+  console.log("AUTH:", req.headers.authorization);
   try {
     let token;
 

@@ -7,11 +7,30 @@ import {
   findDeploymentLogs
 } from "../repositories/deploymentLog.repository.js";
 
-export const getDetails = async(req,res,next)=>{
-  const {id} = req.params;
-  const deployment=await findDeploymentById(id);
-  return res.send(deployment);
-}
+export const getDetails = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const deployment = await findDeploymentById(id);
+
+    if (!deployment) {
+      return res.status(404).json({
+        success: false,
+        message: "Deployment not found"
+      });
+    }
+
+    if (deployment.user_id !== req.user.id) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied"
+      });
+    }
+
+    return res.send(deployment);
+  } catch (error) {
+    next(error);
+  }
+};
 
 
 export const getDeployment = async (
@@ -19,7 +38,10 @@ export const getDeployment = async (
   res,
   next
 ) => {
+  console.log("GET DEPLOYMENT HIT");
+  console.log("USER:", req.user);
   try {
+
     const { id } = req.params;
 
     const deployment =
@@ -31,6 +53,8 @@ export const getDeployment = async (
         message: "Deployment not found"
       });
     }
+
+
 
     if (deployment.status !== "SUCCESS") {
       return res.status(400).json({
@@ -69,7 +93,7 @@ export const getDeployments = async (
 ) => {
   try {
     const deployments =
-      await findAllDeployments();
+      await findAllDeployments(req.user.id);
 
     return res.json({
       success: true,
@@ -84,6 +108,22 @@ export const getDeploymentLogs =
   async (req, res, next) => {
     try {
       const { id } = req.params;
+
+      const deployment = await findDeploymentById(id);
+
+      if (!deployment) {
+        return res.status(404).json({
+          success: false,
+          message: "Deployment not found"
+        });
+      }
+
+      if (deployment.user_id !== req.user.id) {
+        return res.status(403).json({
+          success: false,
+          message: "Access denied"
+        });
+      }
 
       const logs =
         await findDeploymentLogs(id);

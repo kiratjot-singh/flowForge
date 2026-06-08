@@ -13,12 +13,12 @@ import pool from "./config/database.js";
 import githubWebhookRoutes from "./routes/v1/githubWebhook.route.js";
 import deploymentRoutes from "./routes/v1/deployment.route.js";
 import authRoutes from "./routes/v1/auth.route.js";
-import { protect } from "./middlewares/auth.middleware.js";
+import projectRoutes from "./routes/v1/project.route.js";
 
 
 
-const app=express();
-const PORT = env.PORT ;
+const app = express();
+const PORT = env.PORT;
 
 app.use(
   helmet({
@@ -51,19 +51,20 @@ app.use(express.json());
 
 app.use(loggerMiddleware);
 
-app.get("/",(req,res)=>{
-    res.json(
-        {
-            message:"hello world"
-        }
+app.get("/", (req, res) => {
+  res.json(
+    {
+      message: "hello world"
+    }
 
-    );
+  );
 })
 
 app.use("/api/v1/auth", authRoutes);
-app.use("/api/v1/webhooks/github",githubWebhookRoutes);
-app.use("/api/v1/health",healthRoutes);
-app.use("/api/v1/deployments", protect, deploymentRoutes);
+app.use("/api/v1/projects", projectRoutes);
+app.use("/api/v1/webhooks/github", githubWebhookRoutes);
+app.use("/api/v1/health", healthRoutes);
+app.use("/api/v1/deployments", deploymentRoutes);
 
 
 app.use(global404Handler);
@@ -77,9 +78,9 @@ import { initDb } from "./database/init.js";
 // Initialize database tables
 await initDb();
 
-const server=app.listen(PORT,()=>{
-    console.log(`server is running on port ${PORT}`);
-    
+const server = app.listen(PORT, () => {
+  console.log(`server is running on port ${PORT}`);
+
 })
 const shutdown = async () => {
   console.log("Shutting down server...");

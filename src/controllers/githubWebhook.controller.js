@@ -1,38 +1,56 @@
 import crypto from "crypto";
-
 import { createDeployment } from "../repositories/deployment.repository.js";
-
+import { findProjectsByRepoAndBranch } from "../repositories/project.repository.js";
 import deploymentQueue from "../queues/deployment.queue.js";
 
-export const githubWebhook = async (req, res) => {
-  const repoUrl = req.body.repository.clone_url;
+export const githubWebhook = async (req, res, next) => {
+  try {
+    const repoUrl = req.body.repository?.clone_url;
+    const ref = req.body.ref || "";
+    const branch = ref.replace("refs/heads/", "");
 
-  const branch = req.body.ref.replace(
-    "refs/heads/",
-    ""
-  );
-
-  const commitSha =
-  req.body.after ||
-  req.body.head_commit?.id;
-
-  const deployment = await createDeployment({
-    id: crypto.randomUUID(),
-    repoUrl,
-    branch,
-    commitSha,
-    status: "PENDING"
-  });
-
-  await deploymentQueue.add(
-    "build-project",
-    {
-      deploymentId: deployment.id
+    if (!repoUrl || !branch) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid webhook payload: repository clone_url and ref are required"
+      });
     }
-  );
 
-  return res.status(201).json({
-    success: true,
-    deployment
-  });
+    const commitSha = req.body.after || req.body.head_commit?.id || "webhook-trigger";
+
+    // Find all projects registered with this repo URL and branch
+    const projects = await findProjectsByRepoAndBranch(repoUrl, branch);
+
+    if (projects.length === 0) {
+      return res.json({
+        success: true,
+        message: "No matching projects registered for this repository and branch"
+      });
+    }
+
+    const deployments = [];
+
+    for (const project of projects) {
+      const deployment = await createDeployment({
+        id: crypto.randomUUID(),
+        projectId: project.id,
+        commitSha,
+        status: "PENDING"
+      });
+
+      await deploymentQueue.add("build-project", {
+        deploymentId: deployment.id
+      });
+
+      deployments.push(deployment);
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: `Triggered ${deployments.length} deployment(s)`,
+      deployments
+    });
+  } catch (error) {
+    next(error);
+  }
 };

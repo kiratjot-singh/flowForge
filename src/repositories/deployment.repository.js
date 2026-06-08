@@ -2,8 +2,7 @@ import pool from "../config/database.js";
 
 export const createDeployment = async ({
   id,
-  repoUrl,
-  branch,
+  projectId,
   commitSha,
   status
 }) => {
@@ -12,8 +11,7 @@ export const createDeployment = async ({
     INSERT INTO deployments
     (
       id,
-      repo_url,
-      branch,
+      project_id,
       commit_sha,
       status
     )
@@ -22,15 +20,13 @@ export const createDeployment = async ({
       $1,
       $2,
       $3,
-      $4,
-      $5
+      $4
     )
     RETURNING *
     `,
     [
       id,
-      repoUrl,
-      branch,
+      projectId,
       commitSha,
       status
     ]
@@ -42,9 +38,10 @@ export const createDeployment = async ({
 export const findDeploymentById = async (id) => {
   const result = await pool.query(
     `
-    SELECT *
-    FROM deployments
-    WHERE id = $1
+    SELECT d.*, p.repo_url, p.branch, p.name as project_name, p.user_id
+    FROM deployments d
+    JOIN projects p ON d.project_id = p.id
+    WHERE d.id = $1
     `,
     [id]
   );
@@ -81,13 +78,31 @@ export const updateDeploymentOutputDirectory =
     );
   };
 
-  export const findAllDeployments = async () => {
-  const result = await pool.query(`
+export const findDeploymentsByProjectId = async (projectId) => {
+  const result = await pool.query(
+    `
     SELECT *
     FROM deployments
+    WHERE project_id = $1
     ORDER BY created_at DESC
-  `);
+    `,
+    [projectId]
+  );
 
   return result.rows;
 };
 
+export const findAllDeployments = async (userId) => {
+  const result = await pool.query(
+    `
+    SELECT d.*, p.repo_url, p.branch, p.name as project_name
+    FROM deployments d
+    JOIN projects p ON d.project_id = p.id
+    WHERE p.user_id = $1
+    ORDER BY d.created_at DESC
+    `,
+    [userId]
+  );
+
+  return result.rows;
+};
