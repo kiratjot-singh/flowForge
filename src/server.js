@@ -14,6 +14,7 @@ import githubWebhookRoutes from "./routes/v1/githubWebhook.route.js";
 import deploymentRoutes from "./routes/v1/deployment.route.js";
 import authRoutes from "./routes/v1/auth.route.js";
 import projectRoutes from "./routes/v1/project.route.js";
+import logger from "./config/logger.js";
 
 
 
@@ -79,18 +80,18 @@ import { initDb } from "./database/init.js";
 await initDb();
 
 const server = app.listen(PORT, () => {
-  console.log(`server is running on port ${PORT}`);
+  logger.info(`server is running on port ${PORT}`);
 
 })
 const shutdown = async () => {
-  console.log("Shutting down server...");
+  logger.info("Shutting down server...");
 
   server.close(async () => {
-    console.log("HTTP server closed");
+    logger.info("HTTP server closed");
 
     await pool.end();
 
-    console.log("Database pool closed");
+    logger.info("Database pool closed");
 
     process.exit(0);
   });

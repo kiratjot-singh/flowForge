@@ -1,34 +1,13 @@
 import crypto from "crypto";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import { z } from "zod";
 import pool from "../config/database.js";
 import env from "../config/env.js";
-
-// Input validation schemas
-const signupSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters")
-});
-
-const loginSchema = z.object({
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(1, "Password is required")
-});
+import AppError from "../utils/AppError.js";
 
 export const signup = async (req, res, next) => {
   try {
-    const parseResult = signupSchema.safeParse(req.body);
-    if (!parseResult.success) {
-      return res.status(400).json({
-        success: false,
-        message: parseResult.error.errors[0].message,
-        errors: parseResult.error.format()
-      });
-    }
-
-    const { name, email, password } = parseResult.data;
+    const { name, email, password } = req.body;
 
     // Check if user already exists
     const userExistCheck = await pool.query(
@@ -37,10 +16,7 @@ export const signup = async (req, res, next) => {
     );
 
     if (userExistCheck.rows.length > 0) {
-      return res.status(400).json({
-        success: false,
-        message: "Email is already registered"
-      });
+      throw new AppError("Email is already registered", 400);
     }
 
     // Hash password
@@ -70,16 +46,7 @@ export const signup = async (req, res, next) => {
 
 export const login = async (req, res, next) => {
   try {
-    const parseResult = loginSchema.safeParse(req.body);
-    if (!parseResult.success) {
-      return res.status(400).json({
-        success: false,
-        message: parseResult.error.errors[0].message,
-        errors: parseResult.error.format()
-      });
-    }
-
-    const { email, password } = parseResult.data;
+    const { email, password } = req.body;
 
     // Find user by email
     const result = await pool.query(
@@ -88,10 +55,7 @@ export const login = async (req, res, next) => {
     );
 
     if (result.rows.length === 0) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid email or password"
-      });
+      throw new AppError("Invalid email or password", 401);
     }
 
     const user = result.rows[0];
@@ -99,10 +63,7 @@ export const login = async (req, res, next) => {
     // Verify password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
-      return res.status(401).json({
-        success: false,
-        message: "Invalid email or password"
-      });
+      throw new AppError("Invalid email or password", 401);
     }
 
     // Generate JWT
@@ -136,10 +97,7 @@ export const me = async (req, res, next) => {
     );
 
     if (result.rows.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found"
-      });
+      throw new AppError("User not found", 404);
     }
 
     return res.json({

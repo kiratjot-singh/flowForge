@@ -1,4 +1,5 @@
 import pool from "../config/database.js";
+import logger from "../config/logger.js";
 
 export const initDb = async () => {
   try {
@@ -62,8 +63,8 @@ export const initDb = async () => {
       );
     `);
 
-    console.log("Database tables initialized successfully");
+    logger.info("Database tables initialized successfully");
   } catch (error) {
-    console.error("Database initialization failed:", error);
+    logger.error(error, "Database initialization failed");
   }
 };

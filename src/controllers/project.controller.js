@@ -1,5 +1,5 @@
 import crypto from "crypto";
-import { z } from "zod";
+import AppError from "../utils/AppError.js";
 import {
   createProject,
   findProjectById,
@@ -12,24 +12,9 @@ import {
 } from "../repositories/deployment.repository.js";
 import deploymentQueue from "../queues/deployment.queue.js";
 
-const createProjectSchema = z.object({
-  name: z.string().min(1, "Project name is required"),
-  repoUrl: z.string().url("Invalid repository URL"),
-  branch: z.string().min(1, "Branch name is required").default("main")
-});
-
 export const createNewProject = async (req, res, next) => {
   try {
-    const parseResult = createProjectSchema.safeParse(req.body);
-    if (!parseResult.success) {
-      return res.status(400).json({
-        success: false,
-        message: parseResult.error.errors[0].message,
-        errors: parseResult.error.format()
-      });
-    }
-
-    const { name, repoUrl, branch } = parseResult.data;
+    const { name, repoUrl, branch } = req.body;
     const userId = req.user.id;
 
     // Create the project
@@ -88,17 +73,11 @@ export const getProjectDetails = async (req, res, next) => {
 
     const project = await findProjectById(id);
     if (!project) {
-      return res.status(404).json({
-        success: false,
-        message: "Project not found"
-      });
+      throw new AppError("Project not found", 404);
     }
 
     if (project.user_id !== userId) {
-      return res.status(403).json({
-        success: false,
-        message: "Access denied: you do not own this project"
-      });
+      throw new AppError("Access denied: you do not own this project", 403);
     }
 
     const deployments = await findDeploymentsByProjectId(id);
@@ -120,17 +99,11 @@ export const removeProject = async (req, res, next) => {
 
     const project = await findProjectById(id);
     if (!project) {
-      return res.status(404).json({
-        success: false,
-        message: "Project not found"
-      });
+      throw new AppError("Project not found", 404);
     }
 
     if (project.user_id !== userId) {
-      return res.status(403).json({
-        success: false,
-        message: "Access denied: you do not own this project"
-      });
+      throw new AppError("Access denied: you do not own this project", 403);
     }
 
     await deleteProject(id);
@@ -151,17 +124,11 @@ export const triggerManualDeploy = async (req, res, next) => {
 
     const project = await findProjectById(id);
     if (!project) {
-      return res.status(404).json({
-        success: false,
-        message: "Project not found"
-      });
+      throw new AppError("Project not found", 404);
     }
 
     if (project.user_id !== userId) {
-      return res.status(403).json({
-        success: false,
-        message: "Access denied: you do not own this project"
-      });
+      throw new AppError("Access denied: you do not own this project", 403);
     }
 
     // Trigger deployment

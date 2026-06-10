@@ -1,10 +1,9 @@
 import jwt from "jsonwebtoken";
 import env from "../config/env.js";
+import AppError from "../utils/AppError.js";
 
 export const protect = async (req, res, next) => {
-  console.log("PROTECT HIT");
-  console.log("PATH:", req.originalUrl);
-  console.log("AUTH:", req.headers.authorization);
+  
   try {
     let token;
 
@@ -16,10 +15,7 @@ export const protect = async (req, res, next) => {
     }
 
     if (!token) {
-      return res.status(401).json({
-        success: false,
-        message: "Not authorized to access this route. Token is missing."
-      });
+      throw new AppError("Not authorized to access this route. Token is missing.", 401);
     }
 
     try {
@@ -34,10 +30,7 @@ export const protect = async (req, res, next) => {
 
       next();
     } catch (error) {
-      return res.status(401).json({
-        success: false,
-        message: "Not authorized to access this route. Token is invalid or expired."
-      });
+      throw new AppError("Not authorized to access this route. Token is invalid or expired.", 401);
     }
   } catch (error) {
     next(error);

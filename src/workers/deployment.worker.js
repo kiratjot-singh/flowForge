@@ -1,5 +1,6 @@
 import { Worker } from "bullmq";
 import redis from "../config/redis.js";
+import logger from "../config/logger.js";
 
 import fs from "fs/promises";
 import path from "path";
@@ -313,12 +314,12 @@ if (!hasBuildScript) {
         "SUCCESS"
       );
 
-      console.log(
+      logger.info(
         `Deployment completed: ${deployment.id}`
       );
 
     } catch (error) {
-      console.error(error);
+      logger.error(error, "Deployment execution failed");
 
       await createDeploymentLog(
         deploymentId,
@@ -338,4 +339,4 @@ if (!hasBuildScript) {
   }
 );
 
-console.log("Deployment worker started");
+logger.info("Deployment worker started");

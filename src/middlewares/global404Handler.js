@@ -1,7 +1,7 @@
-const global404Handler= (req, res) => {
-  return res.status(404).json({
-    success: false,
-    message: "Route not found"
-  });
+import AppError from "../utils/AppError.js";
+
+const global404Handler = (req, res, next) => {
+  next(new AppError(`Route ${req.originalUrl} not found`, 404));
 };
+
 export default global404Handler;

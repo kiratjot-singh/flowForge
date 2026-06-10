@@ -1,4 +1,5 @@
 import path from "path";
+import AppError from "../utils/AppError.js";
 import {
   findAllDeployments,
   findDeploymentById
@@ -13,17 +14,11 @@ export const getDetails = async (req, res, next) => {
     const deployment = await findDeploymentById(id);
 
     if (!deployment) {
-      return res.status(404).json({
-        success: false,
-        message: "Deployment not found"
-      });
+      throw new AppError("Deployment not found", 404);
     }
 
     if (deployment.user_id !== req.user.id) {
-      return res.status(403).json({
-        success: false,
-        message: "Access denied"
-      });
+      throw new AppError("Access denied", 403);
     }
 
     return res.send(deployment);
@@ -48,27 +43,17 @@ export const getDeployment = async (
       await findDeploymentById(id);
 
     if (!deployment) {
-      return res.status(404).json({
-        success: false,
-        message: "Deployment not found"
-      });
+      throw new AppError("Deployment not found", 404);
     }
 
 
 
     if (deployment.status !== "SUCCESS") {
-      return res.status(400).json({
-        success: false,
-        message: "Deployment not ready"
-      });
+      throw new AppError("Deployment not ready", 400);
     }
 
     if (!deployment.output_directory) {
-      return res.status(400).json({
-        success: false,
-        message:
-          "No build output found"
-      });
+      throw new AppError("No build output found", 400);
     }
 
     const indexPath = path.join(
@@ -112,17 +97,11 @@ export const getDeploymentLogs =
       const deployment = await findDeploymentById(id);
 
       if (!deployment) {
-        return res.status(404).json({
-          success: false,
-          message: "Deployment not found"
-        });
+        throw new AppError("Deployment not found", 404);
       }
 
       if (deployment.user_id !== req.user.id) {
-        return res.status(403).json({
-          success: false,
-          message: "Access denied"
-        });
+        throw new AppError("Access denied", 403);
       }
 
       const logs =

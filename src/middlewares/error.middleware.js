@@ -1,5 +1,8 @@
+import AppError from "../utils/AppError.js";
+import logger from "../config/logger.js";
+
 const errorMiddleware = (err, req, res, next) => {
-  console.error(err);
+  logger.error(err);
 
   // Handle invalid JSON
   if (err.type === "entity.parse.failed") {
@@ -10,7 +13,7 @@ const errorMiddleware = (err, req, res, next) => {
   }
 
   // Handle custom errors
-  if (err instanceof Error && err.statusCode) {
+  if (err instanceof AppError) {
     return res.status(err.statusCode).json({
       success: false,
       message: err.message

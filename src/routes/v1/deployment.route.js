@@ -11,10 +11,7 @@ import { protect } from "../../middlewares/auth.middleware.js";
 
 const router = Router();
 
-router.get("/test", (req, res) => {
-  console.log("TEST ROUTE HIT");
-  res.send("OK");
-});
+
 router.get("/", protect, getDeployments);
 
 router.get("/:id", getDeployment);

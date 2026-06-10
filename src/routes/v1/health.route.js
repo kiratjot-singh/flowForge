@@ -4,7 +4,6 @@ import {
   testPost,
   testError
 } from "../../controllers/health.controller.js";
-import AppError from "../../utils/AppError.js";
 import validate from "../../middlewares/validate.middleware.js"
 import { testPostSchema } from "../../validators/health.validator.js";
 

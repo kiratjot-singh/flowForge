@@ -2,6 +2,7 @@ import crypto from "crypto";
 import { createDeployment } from "../repositories/deployment.repository.js";
 import { findProjectsByRepoAndBranch } from "../repositories/project.repository.js";
 import deploymentQueue from "../queues/deployment.queue.js";
+import AppError from "../utils/AppError.js";
 
 export const githubWebhook = async (req, res, next) => {
   try {
@@ -10,10 +11,7 @@ export const githubWebhook = async (req, res, next) => {
     const branch = ref.replace("refs/heads/", "");
 
     if (!repoUrl || !branch) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid webhook payload: repository clone_url and ref are required"
-      });
+      throw new AppError("Invalid webhook payload: repository clone_url and ref are required", 400);
     }
 
     const commitSha = req.body.after || req.body.head_commit?.id || "webhook-trigger";
